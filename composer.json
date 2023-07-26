@@ -1,0 +1,34 @@
+{
+  "name": "ssystems/arslupin",
+  "authors": [
+    {
+      "name": "Szymon Skurski",
+      "email": "szymon.skurski@gmail.com"
+    }
+  ],
+  "description": "Arsen Lupin - lock pick, PHP arrays, strings, numbers helper",
+  "license": "MIT",
+  "minimum-stability": "dev",
+  "require": {
+    "php": "^7.4",
+    "ext-json": "*",
+    "ext-ctype": "*",
+    "ext-mbstring": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.5"
+  },
+  "type": "library",
+  "autoload": {
+    "psr-4": {
+      "arslupin\\": ["src/arslupin/"]
+    },
+    "files": [
+      "src/arslupin/ARR.php",
+      "src/arslupin/NUM.php",
+      "src/arslupin/STR.php",
+      "src/arslupin/JSON.php",
+      "src/arslupin/HeapAlgorithm.php"
+    ]
+  }
+}
