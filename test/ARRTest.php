@@ -49,40 +49,48 @@ class ARRTest extends TestCase
      */
     public function testSetByChain(): void
     {
-        $arr = [];
-        $chain = 'lvl_1:lvl_2:lvl_3';
-        $set = 'val';
-        ARR::setByChain($arr, $chain, $set);
-        $this->assertSame($set, ARR::getByChain($arr, $chain));
-        $this->assertSame(['lvl_1' => ['lvl_2' => ['lvl_3' => 'val']]], $arr);
-
-        $arr = ['lvl_1' => [
-            'lvl_1_1' => ['val_1'],
-            'lvl_1_2' => ['val_2']
-        ]];
-        $set = 'set_val';
-        $expected = ['lvl_1' => [
-            'lvl_1_1' => ['val_1'],
-            'lvl_1_2' => [
-                'val_2',
-                'lvl_1_2_1' => $set
+        $testCases = [
+            // arr, chain, set, expected
+            [[], 'lvl_1:lvl_2:lvl_3', 'val', ['lvl_1' => ['lvl_2' => ['lvl_3' => 'val']]]],
+            [
+                ['lvl_1' => [
+                'lvl_1_1' => ['val_1'],
+                'lvl_1_2' => ['val_2']
+                ]],
+                'lvl_1:lvl_1_2:lvl_1_2_1',
+                'set_val',
+                ['lvl_1' => [
+                    'lvl_1_1' => ['val_1'],
+                    'lvl_1_2' => [
+                        'val_2',
+                        'lvl_1_2_1' => 'set_val'
+                    ],
+                ]]
             ],
-        ]];
-        $chain = 'lvl_1:lvl_1_2:lvl_1_2_1';
-        ARR::setByChain($arr, $chain, $set);
-        $this->assertSame($set, ARR::getByChain($arr, $chain));
-        $this->assertSame($expected, $arr);
+        ];
+        foreach ($testCases as $case) {
+            [$arr, $chain, $set, $exp] = $case;
+            ARR::setByChain($arr, $chain, $set);
+            $this->assertSame($set, ARR::getByChain($arr, $chain));
+            $this->assertSame($exp, $arr);
+        }
     }
 
     public function testGetArrayRandomValues(): void
     {
-        $arr = ['a', 'b', 'c'];
-        $val = ARR::getArrayRandomValues($arr, 2);
-        $this->assertCount(2, $val);
-        $this->assertContains($val[0], $arr);
-
-        $val = ARR::getArrayRandomValues($arr, 4);
-        $this->assertCount(count($arr), $val);
+        $testCases = [
+            // input, amount
+            [['a', 'b', 'c'], 2, 2],
+            [['a', 'b', 'c'], 4, 3], // cannot draw more than pool size
+        ];
+        foreach ($testCases as $case) {
+            [$arr, $amount, $expAmount] = $case;
+            $results = ARR::getArrayRandomValues($arr, $amount);
+            $this->assertCount((int) $expAmount, $results);
+            foreach ($results as $result) {
+                $this->assertContains($result, $arr);
+            }
+        }
     }
 
     public function testCountRecurrent(): void
@@ -100,19 +108,18 @@ class ARRTest extends TestCase
      */
     public function testQuickSort(): void
     {
-        $arr = [7, 1, 3, 4, 5, 6, 2];
-        $exp = [1, 2, 3, 4, 5, 6, 7];
-        $this->assertSame($exp, ARR::quickSort($arr));
+        $testCases = [
+            // input arr, expected, asc
+            [[7, 1, 3, 4, 5, 6, 2], [1, 2, 3, 4, 5, 6, 7], true],
+            [[7, 1, 3, 4, 5, 6, 2], [7, 6, 5, 4, 3, 2, 1], false],
+            [['c', 'a', 'e', 'b', 'f', 'd'], ['a', 'b', 'c', 'd', 'e', 'f'], true],
+            [['c', 'a', 'e', 'b', 'f', 'd'], ['f', 'e', 'd', 'c', 'b', 'a'], false],
+        ];
 
-        $exp = [7, 6, 5, 4, 3, 2, 1];
-        $this->assertSame($exp, ARR::quickSort($arr, false));
-
-        $arr = ['c', 'a', 'e', 'b', 'f', 'd'];
-        $exp = ['a', 'b', 'c', 'd', 'e', 'f'];
-        $this->assertSame($exp, ARR::quickSort($arr));
-
-        $exp = ['f', 'e', 'd', 'c', 'b', 'a'];
-        $this->assertSame($exp, ARR::quickSort($arr, false));
+        foreach ($testCases as $case) {
+            [$arr, $exp, $asc] = $case;
+            $this->assertSame($exp, ARR::quickSort($arr, $asc));
+        }
     }
 
     public function testGetLastKey(): void

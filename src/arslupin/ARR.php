@@ -494,21 +494,29 @@ class ARR
         return true;
     }
 
-    public static function getArrayRandomValues(array $arr, $amount): array
+    /**
+     * get random values form given array like draw from pool, each value could be drawn only once
+     * for [1,2,3] with amount:3 result could be: [1,2,3] | [1,3,2] | [3,1,3] etc.
+     * because results are draw from pool max amount = pool size
+     * @param array $drawPool
+     * @param $amount
+     * @return array
+     */
+    public static function getArrayRandomValues(array $drawPool, $amount): array
     {
-        if ($amount >= count($arr)) {
-            return $arr; //no reason to rend return all u got
+        if ($amount >= count($drawPool)) {
+            return $drawPool; //no reason to rend return all u got
         }
         $draws = range(1, $amount);
         $drawn = [];
         /** @noinspection PhpUnusedLocalVariableInspection */
         foreach ($draws as $draw) {
-            if (empty($arr)) {
+            if (empty($drawPool)) {
                 break;
             }
-            $rand = array_rand($arr);
-            $drawn[] = $arr[$rand];
-            unset($arr[$rand]);
+            $rand = array_rand($drawPool);
+            $drawn[] = $drawPool[$rand];
+            unset($drawPool[$rand]);
         }
         return $drawn;
     }
