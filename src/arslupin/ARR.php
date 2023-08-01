@@ -122,7 +122,7 @@ class ARR
 
     /**
      * will return array contains keys from both array
-     * if key occurred in both arrays values will be summarize
+     * if key occurred in both arrays values will be summarized
      * numeric values (1+1)
      * string values (str1.$del.str2)
      * array values will be recurrent mergeSum
@@ -201,28 +201,38 @@ class ARR
         return $arr[self::getLastKey($arr)] ?? null;
     }
 
-    public static function getOddValues(array $array) : array
+    public static function getOddValues(array $array, bool $preserveKeys = true) : array
     {
         $odd = [];
         foreach ($array as $key => $value) {
             if ((int) $value % 2 !== 0) {
-                $odd[$key] = $value;
+                $preserveKeys
+                    ? $odd[$key] = $value
+                    : $odd[] = $value;
             }
         }
         return $odd;
     }
 
-    public static function getEvenValues(array $array) : array
+    public static function getEvenValues(array $array, bool $preserveKeys = true) : array
     {
         $even = [];
         foreach ($array as $key => $value) {
             if ((int) $value % 2 === 0) {
-                $even[$key] = $value;
+                $preserveKeys
+                    ? $even[$key] = $value
+                    : $even[] = $key;
             }
         }
         return $even;
     }
 
+    /**
+     * merge recursively two associate arrays
+     * @param $arr1
+     * @param $arr2
+     * @return array
+     */
     public static function mergeAssoc($arr1, $arr2): array
     {
         $arrKeys = self::getArraysKeysUnique($arr1, $arr2);
@@ -240,6 +250,7 @@ class ARR
     }
 
     /**
+     * merge recursively two arrays
      * second array has priority
      * @param array $arr1
      * @param array $arr2
@@ -259,7 +270,7 @@ class ARR
         foreach (array_diff(array_keys($arr2), array_keys($arr1)) as $key) {
             $c = $chain;
             $c[] = $key;
-            $sc = $str_chain = join(self::DEFAULT_SEPARATOR, $c);
+            $sc = join(self::DEFAULT_SEPARATOR, $c);
             self::setByChain($res, $sc, self::getByChain($arr2, $sc));
         }
         foreach ($arr1 as $key => $v1) {
@@ -531,57 +542,55 @@ class ARR
         return $res;
     }
 
-    public static function getByChain(array &$arr, string $chain, string $sep = self::DEFAULT_SEPARATOR) {
-//        $level = $arr;
-//        $chain = explode($sep, $chain);
-//        for ($i=0; $i < count($chain); ++$i) {
-//            if (!isset($level[$chain[$i]])) {
-//                return null;
-//            }
-//            $level = $level[$chain[$i]];
-//        }
-//        return $level;
-        if (empty($chain)) {
-            return $arr;
+    public static function getByChain(array &$arr, string $chain, string $s = self::DEFAULT_SEPARATOR) {
+        $links = explode($s, $chain);
+        $key = $links[0];
+        if (count($links) === 1) {
+            return $arr[$key] ?? null;
         }
-        $v = null;
-        $chain = self::getChainToCode($chain, $sep);
-        $code = '$v = $arr'.$chain.' ?? null;';
-        eval($code); //$v = $arr["lvl_1"]["lvl_2"]["lvl_3"] ?? null;
-        /** @noinspection PhpExpressionAlwaysNullInspection */
-        return $v;
+        if (!array_key_exists($key, $arr) || !is_array($arr[$key])) {
+            return null;
+        }
+        unset($links[0]);
+        return self::getByChain($arr[$key], join($s, $links), $s);
     }
 
     /** @noinspection PhpUnusedParameterInspection */
-    public static function setByChain(array &$arr, string $chain, $set, string $sep = self::DEFAULT_SEPARATOR)
+    public static function setByChain(array &$arr, string $chain, $set, string $s = self::DEFAULT_SEPARATOR)
     {
-//        $level = &$arr;
-//        $chains = explode($sep, $chain);
-//        foreach ($chains as $key) {
-//            $level = &$level[$key]; // set reference (&) in order to change the value of the object
-//        }
-//        $level = $set;
-        $chain = self::getChainToCode($chain, $sep);
-        $code = '$arr'.$chain.' = $set;';
-//        print_r($code);
-        eval($code);
-    }
-
-    /** @noinspection PhpUnusedParameterInspection */
-    public static function unsetByChain(array &$arr, string $chain, string $sep = self::DEFAULT_SEPARATOR): void
-    {
-        if (!$chain) {
+        $links = explode($s, $chain);
+        $key = $links[0];
+        if (count($links) === 1) {
+            $arr[$key] = $set;
             return;
         }
-        $chain = self::getChainToCode($chain, $sep);
-        $code = 'unset($arr'.$chain.');'; //unset($arr["key_1"]["key_2"]["key_3"]);
-//        print_r($code);
-        eval($code);
+        if (!array_key_exists($key, $arr) || !isset($arr[$key])) {
+            $arr[$key] = [];
+        }
+        unset($links[0]);
+        self::setByChain($arr[$key], join($s, $links), $set, $s);
     }
 
-    private static function getChainToCode(string $chain, string $sep = self::DEFAULT_SEPARATOR): string
+    /**
+     * @param array $arr
+     * @param string $chain
+     * @param string $s
+     * @return void
+     */
+    public static function unsetByChain(array &$arr, string $chain, string $s = self::DEFAULT_SEPARATOR): void
     {
-        return '["' . join('"]["', explode($sep, $chain)) . '"]';
+        $links = explode($s, $chain);
+        $key = $links[0];
+        if (count($links) === 1) {
+            unset($arr[$key]);
+
+            return;
+        }
+        if (!array_key_exists($key, $arr) || !is_array($arr[$key])) {
+            return;
+        }
+        unset($links[0]);
+        self::unsetByChain($arr[$key], join($s, $links), $s);
     }
 
     public static function trimKeys(array $arr): array

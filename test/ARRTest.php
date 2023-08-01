@@ -35,13 +35,33 @@ class ARRTest extends TestCase
      */
     public function arrayGetValByChain(): void
     {
-        $arr = ['lvl_1' => ['lvl_2' => ['lvl_3' => 'val']]];
-        $expected = 'val';
-        $val = ARR::getByChain($arr, 'lvl_1:lvl_2:lvl_3');
-        $this->assertSame($expected, $val);
-        $val = ARR::getByChain($arr, 'lvl_1:lvl_2:lvl_4');
-        $expected = null;
-        $this->assertSame($expected, $val);
+        $s = ARR::DEFAULT_SEPARATOR;
+        $cases = [
+            // arr, chain, exp
+            [
+                ['a1' => ['a2' => ['a3' => 'a']]],
+                'a1' . $s . 'a2' . $s . 'a3',
+                'a',
+            ],
+            // get not existed key
+            [
+                ['a1' => ['a2' => ['a3' => 'a']]],
+                'a1' . $s . 'a2' . $s . 'a4',
+                null,
+            ],
+            // not array
+            [
+                ['a1' => ['a2' => ['a3' => 'a']]],
+                'a1' . $s . 'a2' . $s . 'a3' . $s . 'a',
+                null,
+            ],
+        ];
+
+        foreach ($cases as $case) {
+            [$arr, $chain, $exp] = $case;
+            $val = ARR::getByChain($arr, $chain);
+            $this->assertSame($exp, $val);
+        }
     }
 
     /**
@@ -51,21 +71,33 @@ class ARRTest extends TestCase
     {
         $testCases = [
             // arr, chain, set, expected
-            [[], 'lvl_1:lvl_2:lvl_3', 'val', ['lvl_1' => ['lvl_2' => ['lvl_3' => 'val']]]],
             [
-                ['lvl_1' => [
-                'lvl_1_1' => ['val_1'],
-                'lvl_1_2' => ['val_2']
-                ]],
+                [], // arr
+                'lvl_1:lvl_2:lvl_3', // chain
+                'val', // set value
+                ['lvl_1' => ['lvl_2' => ['lvl_3' => 'val']]]
+            ], // expected
+            [
+                [
+                    'lvl_1' =>
+                        [
+                            'lvl_1_1' => ['val_1'],
+                            'lvl_1_2' => ['val_2']
+                        ]
+                ],
                 'lvl_1:lvl_1_2:lvl_1_2_1',
                 'set_val',
-                ['lvl_1' => [
-                    'lvl_1_1' => ['val_1'],
-                    'lvl_1_2' => [
-                        'val_2',
-                        'lvl_1_2_1' => 'set_val'
-                    ],
-                ]]
+                [
+                    'lvl_1' =>
+                        [
+                            'lvl_1_1' => ['val_1'],
+                            'lvl_1_2' =>
+                                [
+                                    'val_2',
+                                    'lvl_1_2_1' => 'set_val'
+                                ],
+                        ]
+                ]
             ],
         ];
         foreach ($testCases as $case) {
@@ -210,7 +242,7 @@ class ARRTest extends TestCase
     {
         $arr = [];
         $arr['l1']['l2']['l3'] = 'val';
-        $arr_c = $arr;
+        $arr_c['l1']['l2']['l3'] = 'val';
         $c = 'l1:l2:l3';
         ARR::unsetByChain($arr, $c);
         unset($arr_c['l1']['l2']['l3']);
@@ -305,5 +337,34 @@ class ARRTest extends TestCase
             [2,3,4,1],
         ];
         $this->assertSame($expected, $heap->get());
+    }
+
+    public function testGetEvenValues(): void {
+        $arr = [0,1,2,3,4,5,6,7,8,9,10];
+        $cases = [
+            // preserve, expected
+            [false, [1,3,5,7,9]],
+            [true, [1 => 1,3 => 3,5 => 5,7 => 7,9 => 9]],
+        ];
+        $expected = [1,3,5,7,9];
+        $this->assertSame($expected, ARR::getOddValues($arr, false));
+
+        foreach ($cases as $case) {
+            [$preserve, $expected] = $case;
+            $this->assertSame($expected, ARR::getOddValues($arr, $preserve));
+        }
+    }
+
+    public function testGetOddValues(): void {
+        $arr = [0,1,2,3,4,5,6,7,8,9,10];
+        $cases = [
+            // preserve, expected
+            [false, [0,2,4,6,8,10]],
+            [true, [0 => 0, 2 => 2,4 => 4,6 => 6,8 => 8,10 => 10]],
+        ];
+        foreach ($cases as $case) {
+            [$preserve, $expected] = $case;
+            $this->assertSame($expected, ARR::getEvenValues($arr, $preserve));
+        }
     }
 }
